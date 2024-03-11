@@ -1,8 +1,8 @@
 import React from 'react';
-import { useState } from 'react';
-import 'bootstrap/dist/css/bootstrap.min.css';
-const Render = ({ temp, time, index }) => {
-  console.log('Received Props:', temp, time);
+
+const Render = ({temp,time}) => {
+  console.log('Received Props:', temp,time);
+
   const formatTime = (timeString) => {
     const date = new Date(timeString);
     const hours = date.getHours();
@@ -17,22 +17,24 @@ const Render = ({ temp, time, index }) => {
 
   return (
     <div>
-
       <div className="container">
         <div className="row">
           <div className="col-3">
             <td>{temp} °F</td>
           </div>
           <div className="col-3">
-            {formatTime(time)}
+            <p>
+              {formatTime(time)}
+            </p>
           </div>
         </div>
       </div>
     </div>
-
-
   );
-
 };
 
 export default Render;
+
+
+
+

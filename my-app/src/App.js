@@ -10,17 +10,19 @@ const App = () => {
   const geocoding = async (city) => {
     try {
       const response = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${city}&count=1&language=en&format=json`);
-      const d = await response.json();
-      const locations = d.results?.[0] ?? null;
+      const data = await response.json();
+      const locations = data.results?.[0] ?? null;
+
       if (!locations) {
-        console.log("LOCATION NOT FOUND");
+        console.log('LOCATION NOT FOUND');
         return null;
       }
+
       const { latitude, longitude } = locations;
       return { latitude, longitude };
     } catch (error) {
-      setError('LOCATION NOT FOUND');
-      console.error('Geo error:', error);
+      setError('LOCATION NOT FOUND' + error.message);
+      console.error('Geocoding error:', error);
       return null;
     }
   };
@@ -28,17 +30,24 @@ const App = () => {
   const weatherFetch = async (city) => {
     try {
       const locations = await geocoding(city);
+  
       if (!locations) {
-        console.log("LOCATION NOT FOUND");
-        return null;
+        console.log('LOCATION NOT FOUND');
       }
-      const fetchWea = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${locations.latitude}&longitude=${locations.longitude}&current=temperature_2m&hourly=temperature_2m&temperature_unit=fahrenheit&timezone=auto&daily=temperature_2m_max,temperature_2m_min`);
-      const weaData = await fetchWea.json();
-
-      return { ...weaData, name: city };
+  
+      const fetchWeather = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${locations.latitude}&longitude=${locations.longitude}&current=temperature_2m&hourly=temperature_2m&temperature_unit=fahrenheit&timezone=auto&daily=temperature_2m_max,temperature_2m_min`);
+      
+      if (!fetchWeather.ok) {
+        console.log('ERROR OF FETCH');
+        throw new Error('Error fetching weather data');
+      }
+  
+      const weatherData = await fetchWeather.json();
+  
+      return { ...weatherData, name: city };
     } catch (error) {
-      setError("ERROR OF FETCH");
-      console.error("ERROR OF FETCHING", error);
+      setError('LOCATION NOT FOUND' + error.message);
+      console.error('Error fetching weather data:', error);
       return null;
     }
   };
@@ -46,13 +55,13 @@ const App = () => {
   const handleCityButtonClick = async (city) => {
     try {
       const data = await weatherFetch(city);
+
       if (data !== null) {
         setCity(data);
       }
     } catch (error) {
-      setError('Error: City not found');
-      console.error('handle error: CITY NOT FOUND', error);
-      return null;
+      setError('Error: City not found' + error.message);
+      console.error('Handle error: CITY NOT FOUND', error);
     }
   };
 
@@ -60,18 +69,22 @@ const App = () => {
     if (searchInput.trim() !== '') {
       try {
         const data = await weatherFetch(searchInput.trim());
+  
         if (data !== null) {
           setCity(data);
         }
       } catch (error) {
-        setError('ERROR');
-        console.error('Error:Click', error);
+        setError(`Latitude and longitude for ${searchInput} not found! Please enter a valid city name.`);
+        console.error('Error clicking search button:', error);
       }
     }
   };
+  
 
   const renderWeatherData = () => {
     if (cities) {
+      const { hourly, current } = cities;
+
       return (
         <div className="Container">
           <div className="row">
@@ -82,17 +95,13 @@ const App = () => {
               <p>Time </p>
             </div>
           </div>
-          {cities.hourly &&
-            cities.hourly.time &&
-            cities.hourly.temperature_2m &&
-            cities.hourly.time.slice(0, 10).map((time, index) => (
-              <Render
-                key={index}
-                temp={cities.hourly.temperature_2m[index]}
-                time={time}
-                index={index}
-              />
-            ))}
+          {hourly && hourly.time && hourly.temperature_2m && hourly.time.slice(0, 10).map((time, index) => (
+            <Render
+              key={index}
+              temp={hourly.temperature_2m[index]}
+              time = {time}
+            />
+          ))}
         </div>
       );
     }
@@ -100,7 +109,7 @@ const App = () => {
   };
 
   useEffect(() => {
-    // Fetch weather data for Austin when component mounts
+    // Fetch weather data for Austin when the component mounts
     handleCityButtonClick('Austin');
   }, []); // Empty dependency array ensures it only runs once on mount
 
@@ -157,3 +166,4 @@ const App = () => {
 };
 
 export default App;
+
